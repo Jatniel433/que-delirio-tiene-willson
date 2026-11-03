@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IES Horizonte</title>
+<meta name="color-scheme" content="dark">
+<link rel="stylesheet" type="text/css" href="js/styles.css" />
+</head>
+<style>
+:root{--ink:#1d2a5b;--paper:#f6f0dc;--rule:#9bb7d8;--red:#c4423f;--slate:#17202b;--chalk:#f2d45c;color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;background:#0f151d;overflow:hidden;font-family:'Patrick Hand',cursive,sans-serif;color:var(--paper);user-select:none;-webkit-user-select:none;touch-action:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.px{font-family:'Press Start 2P',monospace}
+#hud{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:calc(10px + env(safe-area-inset-left,0px));right:calc(10px + env(safe-area-inset-right,0px));display:flex;justify-content:space-between;gap:10px;pointer-events:none}
+#hud .chip{background:rgba(23,32,43,.88);border:2px solid var(--chalk);padding:8px 10px;font-size:9px;line-height:1.6;max-width:min(60vw,420px)}
+#hud .chip small{display:block;color:#b9c4d2;font-size:8px}
+#hud .btns{display:flex;gap:6px;pointer-events:auto}
+button{font:inherit;cursor:pointer}
+.sq{background:var(--slate);color:var(--chalk);border:2px solid var(--chalk);padding:8px 10px;font-family:'Press Start 2P',monospace;font-size:9px}
+.sq:hover,.sq:focus-visible{background:var(--chalk);color:var(--slate);outline:none}
+.paper{background:var(--paper);background-image:linear-gradient(90deg,transparent 46px,var(--red) 46px,var(--red) 48px,transparent 48px),repeating-linear-gradient(transparent 0 27px,var(--rule) 27px 28px);color:var(--ink);box-shadow:0 6px 0 rgba(0,0,0,.45);border:3px solid #2a1f14;line-height:28px;font-size:23px}
+#dlg{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));width:min(880px,94vw);padding:14px 20px 8px 62px;min-height:118px}
+#who{position:absolute;top:-20px;left:56px;background:var(--red);color:var(--paper);padding:2px 12px;font-size:21px;line-height:26px;border:3px solid #2a1f14}
+#opts{display:flex;flex-direction:column;align-items:flex-start;margin-top:4px}
+#opts button{background:none;border:0;color:var(--ink);font-size:22px;line-height:28px;padding:0 6px;text-align:left}
+#opts button.on::before{content:'\25B8 ';color:var(--red)}
+#opts button.on{background:rgba(196,66,63,.12)}
+#hint{position:absolute;right:14px;bottom:4px;font-size:16px;color:#6b79a8;line-height:20px}
+#menu{position:fixed;inset:0;background:rgba(10,14,20,.78);display:grid;place-items:center;padding:16px}
+#menu .paper{width:min(640px,96vw);max-height:92vh;overflow:auto;padding:18px 22px 14px 62px}
+#menu h2{margin:0;font-size:28px;line-height:28px}
+#menu h3{margin:0;font-size:22px;line-height:28px;color:var(--red)}
+.bar{display:inline-block;width:140px;height:12px;background:#d9d2b8;border:2px solid var(--ink);vertical-align:middle;margin-left:8px}
+.bar i{display:block;height:100%;background:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+#menu .sq{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+#menu .sq:hover{background:var(--red);border-color:var(--red)}
+#title{position:fixed;inset:0;display:grid;place-items:center;text-align:center;padding:20px;background:radial-gradient(ellipse at 50% 40%,#25364a,#0c1118 75%)}
+#title h1{font-family:'Press Start 2P',monospace;font-size:clamp(20px,4.6vw,46px);line-height:1.35;color:var(--chalk);margin:0 0 14px;text-shadow:4px 4px 0 #6b2b29}
+#title p{font-size:clamp(18px,2.4vw,26px);margin:0 0 28px;color:#c9d2de}
+#title .row{justify-content:center}
+#title .sq{padding:14px 18px;font-size:11px}
+#toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);background:var(--chalk);color:var(--slate);padding:10px 16px;font-size:11px;border:3px solid var(--slate);opacity:0;transition:opacity .4s;pointer-events:none;text-align:center}
+#toast.on{opacity:1}
+#fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .22s}
+#pad{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));display:none;grid-template:repeat(3,56px)/repeat(3,56px);gap:4px}
+#pad button,#act{background:rgba(23,32,43,.8);color:var(--chalk);border:2px solid var(--chalk);font-size:22px;padding:0}
+#act{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(30px + env(safe-area-inset-bottom,0px));width:76px;height:76px;border-radius:50%;display:none;font-family:'Press Start 2P',monospace;font-size:16px}
+@media (pointer:coarse){#pad{display:grid}#act{display:block}#dlg{bottom:calc(150px + env(safe-area-inset-bottom,0px))}#hint{display:none}}
+@media (prefers-reduced-motion:reduce){#fade,#toast{transition:none}}
+</style>
+</head>
+
+<body>
+<canvas id="cv"></canvas>
+<audio id="music" loop></audio>
+
+<div id="hud" hidden>
+  <div class="chip px"><span id="place"></span><small id="hora"></small><small id="obj"></small></div>
+  <div class="btns"><button class="sq" id="bMenu" aria-label="Agenda">Agenda</button><button class="sq" id="bFs" aria-label="Pantalla completa">&#x26F6;</button></div>
+</div>
+
+<div id="dlg" class="paper" hidden>
+  <div id="who"></div><div id="txt"></div><div id="opts"></div><div id="hint">E / Espacio</div>
+</div>
+
+<div id="menu" hidden><div class="paper" id="menuBody"></div></div>
+
+<div id="title">
+  <div>
+    <h1 id="tTitle"></h1><p id="tSub"></p>
+    <div class="row"><button class="sq" id="bStart">Nueva partida</button><button class="sq" id="bCont" hidden>Continuar</button></div>
+    <p style="margin-top:26px;font-size:18px;color:#8fa0b5">Mover: flechas o WASD &nbsp;·&nbsp; Hablar: E o Espacio &nbsp;·&nbsp; Agenda: Esc &nbsp;·&nbsp; Pantalla completa: F</p>
+  </div>
+</div>
+
+<div id="toast" class="px"></div>
+<div id="fade"></div>
+<div id="pad"><span></span><button data-k="up">&#9650;</button><span></span><button data-k="left">&#9664;</button><span></span><button data-k="right">&#9654;</button><span></span><button data-k="down">&#9660;</button><span></span></div>
+<button id="act" aria-label="Hablar">E</button>
+
+<script>
+/* =====================================================================
+   CONTENIDO — aquí va tu historia (STORY, MAPS y las clases de abajo).
+   Líneas de diálogo: 'texto'  ó  {n:'Nombre', t:'texto', fx:()=>{...}, opts:[{t:'opción', go:[líneas], fx:()=>{...}}]}
+   Ayudantes: give('id'), setQ('objetivo'), st('animo',+1), hora('9:00'), addMin(30), G.flags.x
+   cls(id,profe,pregunta,[respuestas],indiceCorrecto,'stat') = actividad de clase 1 vez al día
+   ===================================================================== */
+const cls=(id,who,q,ans,ok,stat)=>()=>{
+  const k='c_'+id+'_'+G.day;
+  if(G.flags[k])return [{n:who,t:'Por hoy ya hemos terminado. Mañana más.'}];
+  return [{n:who,t:q,opts:ans.map((a,i)=>({t:a,go:[{n:who,t:i==ok?'¡Exacto! Buen trabajo.':'No exactamente. Era: '+ans[ok]+'.',fx:()=>{G.flags[k]=1;st(stat,i==ok?1:-0.5);addMin(30)}}]}))}];
+};
+const lengua=cls('len','Marta','Lengua: ¿cuál es el sujeto en «Los niños juegan en el patio»?',['Los niños','en el patio','juegan'],0,'notas');
+const mates=cls('mat','Sr. Ramos','Matemáticas: ¿cuánto es 7 × 8?',['54','56','64'],1,'notas');
+const ciencias=cls('cie','Profa. Vega','Ciencias: ¿qué planeta se conoce como el planeta rojo?',['Venus','Marte','Júpiter'],1,'notas');
+const gimnasia=()=>[{n:'Entrenador Gil',t:'¡Educación física! ¿Qué toca hoy?',opts:[
+  {t:'Calentar y correr',go:[{n:'Entrenador Gil',t:'¡Cinco vueltas a la cancha, vamos!',fx:()=>{st('animo',1);addMin(30)}}]},
+  {t:'Partidillo 3 contra 3',go:[{n:'Entrenador Gil',t:'¡A jugar! Y pasa el balón, que no eres Jordan.',fx:()=>{st('fama',1);addMin(40)}}]},
+  {t:'Hoy no, gracias',go:[{n:'Entrenador Gil',t:'Anda, que luego te duele la espalda.'}]}]}];
+
+const STORY={
+  title:'IES Horizonte',
+  sub:'Pasillos, exámenes y secretos',
+  save:'rpg-instituto-v2',
+  start:{map:'pasillo',x:10,y:5},
+  quest:'Encuentra a Paco, el conserje.',
+  stats:{notas:0.1,animo:0.1,fama:0.1},
+  statNames:{notas:'Notas',animo:'Ánimo',fama:'Popularidad'},
+  items:{
+    llave:['Llave de taquilla','Una llave con el número 7 grabado.'],
+    nota:['Nota doblada','Un papel que alguien dejó en tu taquilla.']
+  },
+  intro:[
+    'Lunes, 8:05. Primer día en el instituto nuevo.',
+    'El timbre aún no ha sonado, pero el pasillo ya huele a goma de borrar y a prisas.',
+    'Tu mochila pesa más de lo normal. Quizá sea por los nervios.',
+    'pero hey',
+    'tranquilo.',
+    'no es para tanto.',
+    ' Solo es un instituto.',
+    '...',
+    'piensa en lo que te ahoras de tiempo al estar aca, al menos no estaras con el estupido de el hijo del vecino que se cree tu amigo, ni soportar como te mira. ',
+    'Tu objetivo es encontrar a Paco, el conserje. Él te dará la llave de tu taquilla.',
+    'Ah, y el autobús sale a las 16:25. No lo pierdas.'
+  ],
+  npcs:[
+    {id:'alumno2',map:'pasillo',x:6,y:5,name:'Alumno 2',hair:'#38251c',shirt:'#c4423f',talk:()=>[{n:'Alumno 2',t:'¿Sabes qué clase toca ahora?'},{n:'Alumno 2',t:'Mates en la puerta del fondo, Ciencias al otro lado, y Lengua es el 1A.'}]},
+    {id:'paco',map:'pasillo',x:8,y:3,name:'Paco',hair:'#8a8a8a',shirt:'#3d6b9a',sit:true,still:true,talk:()=>{
+      if(G.inv.includes('llave'))return [{n:'Paco',t:'Ya tienes tu llave. Y no corras por los pasillos.'}];
+      const dar=[{n:'Paco',t:'Toma. Cuídala, que es la tercera que pierdo este año.',fx:()=>{give('llave');setQ('Abre tu taquilla (la 7) y ve a clase: Lengua, Mates, Ciencias y Educación Física.')}}];
+      if(G.pacoHablo)return [{n:'Paco',t:'Será mejor que tomes la llave antes de que se te olvide... o a mí.',opts:[{t:'Coger la llave',go:dar},{t:'Seguir explorando',go:[{n:'Paco',t:'Como quieras, pero luego no digas que no te avisé.'}]}]}];
+      return [{n:'Paco',t:'¡Eh, tú! El nuevo, ¿verdad? Tu taquilla es la 7. La llave la tengo yo.',opts:[{t:'Gracias, Paco. ¿Me la das?',go:dar},{t:'Prefiero explorar primero.',go:[{n:'Paco',t:'Como quieras. Aquí estaré.',fx:()=>{G.pacoHablo=true}}]}]}];
+    }},
+    {id:'lucia',map:'pasillo',x:15,y:4,name:'Lucía',hair:'#2a1a12',shirt:'#c4423f',talk:()=>{
+      if(G.flags.lucia)return [{n:'Lucía',t:'Nos vemos en el patio, ¿vale?'}];
+      return [{n:'Lucía',t:'¿Tú eres el nuevo? Soy Lucía. Si te pierdes, grita.',opts:[
+        {t:'Encantado. ¿Qué tal los profes?',go:[{n:'Lucía',t:'Marta es maja pero odia el retraso. Date prisa.',fx:()=>{G.flags.lucia=1;st('fama',0.1)}}]},
+        {t:'(Asentir y seguir andando)',go:[{n:'Lucía',t:'…Vale. Qué simpático.',fx:()=>{G.flags.lucia=1;st('animo',-1)}}]}]}];
+    }},
+    {obj:1,map:'pasillo',x:6,y:1,talk:()=>{
+      if(!G.inv.includes('llave'))return ['La taquilla 7 está cerrada con llave.'];
+      if(G.flags.taq)return ['Taquilla 7: ya está vacía.'];
+      return [{t:'Abres la taquilla 7. Dentro hay un horario y una nota doblada.',fx:()=>{G.flags.taq=1;give('nota')}},'La nota dice: «Bienvenido. Aquí empieza tu historia.»'];
+    }},
+    /* Aula 1A · Lengua */
+    {id:'marta',map:'aula',x:6,y:2,name:'Marta',hair:'#5b3a8c',shirt:'#e8e2c0',talk:()=>{
+      if(!G.flags.marta){G.flags.marta=1;return [{n:'Marta',t:'Llegas justo. Bienvenido al 1A.'},{n:'Marta',t:'Esta semana habrá un examen sorpresa. Es broma. Casi.',fx:()=>{st('notas',1);hora('8:30')}}]}
+      return lengua();
+    }},
+    {id:'alumno1',map:'aula',x:3,y:3,name:'Alumno',hair:'#8a8a8a',shirt:'#3d6b9a',sit:true,still:true,talk:()=>[{n:'Alumno',t:'Estoy intentando prestar atención a la clase.'}]},
+    /* Aula 2 · Matemáticas */
+    {id:'ramos',map:'mates',x:6,y:2,name:'Sr. Ramos',hair:'#4a4a4a',shirt:'#6b8e5a',talk:mates},
+    {id:'alumna3',map:'mates',x:2,y:3,name:'Alumna',hair:'#d9a441',shirt:'#c4423f',sit:true,still:true,talk:()=>[{n:'Alumna',t:'Yo ya me sé la tabla del 7. Casi.'}]},
+    /* Aula 3 · Ciencias */
+    {id:'vega',map:'ciencias',x:6,y:2,name:'Profa. Vega',hair:'#2a1a12',shirt:'#e8e2c0',talk:ciencias},
+    {id:'alumno4',map:'ciencias',x:10,y:3,name:'Alumno',hair:'#38251c',shirt:'#2e8f87',sit:true,still:true,talk:()=>[{n:'Alumno',t:'Dicen que el mechero Bunsen es peligroso. A mí me encanta.'}]},
+    /* Gimnasio */
+    {id:'gil',map:'gimnasio',x:7,y:3,name:'Entrenador Gil',hair:'#38251c',shirt:'#c4423f',still:true,talk:gimnasia},
+    {id:'alumno5',map:'gimnasio',x:4,y:5,name:'Alumno',hair:'#d9a441',shirt:'#3d6b9a',talk:()=>[{n:'Alumno',t:'¡Pásala! ¡Pásala! ¡Nunca me la pasan!'}]},
+    {id:'alumna6',map:'gimnasio',x:11,y:6,name:'Alumna',hair:'#5b3a8c',shirt:'#2e8f87',talk:()=>[{n:'Alumna',t:'Si encestas desde el centro, te respeto para siempre.'}]},
+    {id:'dani',map:'patio',x:5,y:6,name:'Dani',hair:'#d9a441',shirt:'#2e8f87',talk:()=>[{n:'Dani',t:'Dicen que en el gimnasio se oyen ruidos por la noche.'},{n:'Dani',t:'Yo no me lo creo. Pero tampoco entro solo.'},{n:'Dani',t:'El gimnasio está al fondo del patio, a la derecha.'}]},
+    /* Barrio y casa */
+    {id:'tomas',map:'barrio',x:13,y:5,name:'Tomás',hair:'#8a5a2b',shirt:'#e8d86a',talk:()=>[{n:'Tomás',t:'¡Hey! ¡Somos amigos, ¿verdad?! ¡Vamos a jugar!',opts:[
+      {t:'Claro... un ratito.',go:[{n:'Tomás',t:'¡Genial! Eres mi mejor amigo.',fx:()=>{st('animo',-0.5);addMin(20)}}]},
+      {t:'Tengo tarea.',go:[{n:'Tomás',t:'Ah... vale. Mañana, entonces. ¡Te espero en el autobús!'}]}]}]},
+    {id:'wilson',map:'barrio',x:16,y:4,name:'Sr. Wilson',hair:'#8a8a8a',shirt:'#3f5f8a',still:true,talk:()=>[{n:'Sr. Wilson',t:'Buenas tardes, chico. ¿Qué tal el cole?'},{n:'Sr. Wilson',t:'Cuidado con los aspersores. Se encienden cuando menos te lo esperas.'}]},
+    {id:'mama',map:'casa',x:3,y:3,name:'Mamá',hair:'#2a1a12',shirt:'#c4423f',still:true,talk:()=>{
+      const k='cena'+G.day;
+      if(G.flags[k])return [{n:'Mamá',t:'A dormir pronto, que mañana hay cole.'}];
+      return [{n:'Mamá',t:'Hola, cariño. ¿Qué tal el día? La cena está lista.',opts:[
+        {t:'Cenar con ella',go:[{n:'Mamá',t:'Qué bien. Cuéntame todo.',fx:()=>{G.flags[k]=1;st('animo',1);addMin(40)}}]},
+        {t:'Luego, mamá',go:[{n:'Mamá',t:'Como quieras, pero se enfría.'}]}]}];
+    }}
+  ]
+};
+
+/* Mapas. Puertas: a,b,c,g = a otra sala · d,p,q,e = vuelta/otras · X,N = cerradas */
+const AULA=['##############','#BBBBBBBBBBBB#','#............#','#.DD.DD.DD.DD#','#............#','#.DD.DD.DD.DD#','#............#','#............#','######d#######'];
+const gen=(w,h,f)=>{const r=[];for(let y=0;y<h;y++){let s='';for(let x=0;x<w;x++)s+=f(x,y);r.push(s)}
+  return {r,put:(x,y,c)=>{r[y]=r[y].slice(0,x)+c+r[y].slice(x+1)}}};
+
+const MAPS={
+  pasillo:{n:'Pasillo principal',floor:'lino',rows:[
+    '###a#######b#######c##',
+    '#LL.LLLLLLL.LLLLLLL.L#',
+    '#....................#',
+    '#....................#',
+    '#....................#',
+    '#....................#',
+    '##########p###########'],
+    warps:{a:{to:'aula',x:6,y:7},b:{to:'mates',x:6,y:7},c:{to:'ciencias',x:6,y:7},p:{to:'patio',x:9,y:1}}},
+  aula:{n:'Aula 1A · Lengua',floor:'wood',rows:AULA,warps:{d:{to:'pasillo',x:3,y:1}}},
+  mates:{n:'Aula 2 · Matemáticas',floor:'wood',rows:['##############','#BBBBBBBBBBBB#','#............#','#DD.DD.DD.DD.#','#............#','#DD.DD.DD.DD.#','#............#','#............#','######d#######'],warps:{d:{to:'pasillo',x:11,y:1}}},
+  ciencias:{n:'Aula 3 · Ciencias',floor:'lino',rows:['##############','#BBBBBBBBBBBB#','#............#','#.HH..HH..HH.#','#............#','#.HH..HH..HH.#','#............#','#............#','######d#######'],warps:{d:{to:'pasillo',x:19,y:1}}},
+  gimnasio:{n:'Gimnasio',floor:'court',rows:[
+    '################',
+    '#..............#',
+    '#..............#',
+    '#..............#',
+    '#O............O#',
+    '#..............#',
+    '#..............#',
+    '#..............#',
+    '#.HHHH....HHHH.#',
+    '#######d########'],warps:{d:{to:'patio',x:18,y:5}}},
+  patio:(()=>{const g=gen(20,11,(x,y)=>(x==0||x==19||y==10)?'T':(y==0?'#':'.'));
+    g.put(9,0,'q');g.put(19,5,'g');[[3,3],[15,3],[16,8],[2,8],[10,8]].forEach(p=>g.put(p[0],p[1],'T'));[[6,5],[7,5],[13,6],[14,6]].forEach(p=>g.put(p[0],p[1],'H'));
+    return {n:'Patio',floor:'grass',rows:g.r,warps:{q:{to:'pasillo',x:10,y:5},g:{to:'gimnasio',x:7,y:8}}}})(),
+  barrio:(()=>{const g=gen(24,10,(x,y)=>(x==0||x==23||y==0||y==9)?'T':y==5||y==8?'s':y==6||y==7?'r':'.');
+    [3,10,17].forEach(hx=>{[-1,0,1].forEach(d=>g.put(hx+d,1,'R'));g.put(hx-1,2,'W');g.put(hx,2,hx==10?'e':'N');g.put(hx+1,2,'W')});
+    g.put(13,3,'C');g.put(8,4,'M');[[6,3],[20,3],[2,4],[21,4],[13,1]].forEach(p=>g.put(p[0],p[1],'T'));
+    return {n:'Calle Maple',floor:'grass',rows:g.r,warps:{e:{to:'casa',x:5,y:5}}}})(),
+  casa:{n:'Tu casa',floor:'wood',rows:['############','#ZZ......SS#','#..........#','#..........#','#..........#','#..........#','#####d######'],warps:{d:{to:'barrio',x:10,y:3}}}
+};
+
+/* =====================================================================
+   MOTOR
+   ===================================================================== */
+const $=s=>document.querySelector(s);
+const cv=$('#cv'),cx=cv.getContext('2d');
+const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const SOLID='#LDBTHXZSORWNMC';
+const DIR={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+const DAYS=['Lunes','Martes','Miércoles','Jueves','Viernes'];
+let G,MAP,mode='title',keys={},P={},t0=0,Z=3,W=0,H=0,clock=0,bus={t:0};
+let q=[],cur=null,ti=null,sel=0,full='';
+
+// ---- SISTEMA DE MÚSICA ----
+
+const music = $('#music');
+
+const MUSIC = {
+  title: 'audio/menu.mp3',
+  pasillo: 'audio/pasillo.mp3',
+  aula: 'audio/aula1.mp3',
+  mates: 'audio/aula.mp3',
+  ciencias: 'audio/aula.mp3',
+  patio: 'audio/patio.mp3',
+  gimnasio: 'audio/aula.mp3',
+  barrio: 'audio/barrio.mp3',
+  casa: 'audio/barrio1.mp3'
+};
+
+function playMusic(place) {
+  const file = MUSIC[place];
+
+  if (!file) {
+    console.warn('No hay música para:', place);
+    return;
+  }
+
+  if (music.dataset.file === file && !music.paused) return;
+
+  music.dataset.file = file;
+  music.src = file;
+  music.volume = 0.35;
+  music.load();
+
+  music.play().catch(error => {
+    console.error('Error al reproducir música:', error);
+    toast('No se pudo reproducir la música. Revisa la consola.');
+  });
+}
+
+function stopMusic() {
+  music.pause();
+}
+
+function newGame(){
+  G={map:STORY.start.map,inv:[],flags:{},stats:{...STORY.stats},quest:STORY.quest,min:485,day:0,acc:0};
+  P={x:STORY.start.x,y:STORY.start.y,from:null,mv:0,dir:'up',step:0};
+  loadMap(G.map);
+}
+function loadMap(id){G.map=id;MAP=MAPS[id];}
+const give=id=>{if(!G.inv.includes(id)){G.inv.push(id);toast('Objeto: '+STORY.items[id][0])}};
+const setQ=t=>{G.quest=t;toast('Nuevo objetivo')};
+const st=(k,n)=>{G.stats[k]=Math.max(0,Math.min(10,G.stats[k]+n));toast(STORY.statNames[k]+(n>0?' +':' ')+n)};
+const hora=h=>{const [a,b]=h.split(':');G.min=Math.max(G.min,+a*60+ +b)};
+const addMin=n=>{G.min+=n};
+const clockStr=()=>{const m=G.min%1440;return DAYS[G.day%5]+' · '+(m/60|0)+':'+String(m%60).padStart(2,'0')};
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),1800)}
+
+/* ---- guardado ---- */
+function save(){try{localStorage.setItem(STORY.save,JSON.stringify({G,x:P.x,y:P.y,d:P.dir}))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem(STORY.save));if(!s)return false;G=s.G;P={x:s.x,y:s.y,from:null,mv:0,dir:s.d,step:0};loadMap(G.map);return true}catch(e){return false}}
+function hasSave(){try{return !!localStorage.getItem(STORY.save)}catch(e){return false}}
+
+/* ---- mapa ---- */
+const tileAt=(x,y)=>(MAP.rows[y]||'')[x]||'#';
+const npcsHere=()=>STORY.npcs.filter(n=>n.map===G.map);
+function free(x,y){if(SOLID.includes(tileAt(x,y)))return false;return !npcsHere().some(n=>!n.obj&&((n.x===x&&n.y===y)||(n.from&&n.from[0]===x&&n.from[1]===y)))}
+function front(){const d=DIR[P.dir];return [P.x+d[0],P.y+d[1]]}
+function targetAt(x,y){return npcsHere().find(n=>n.x===x&&n.y===y)}
+
+function go(id,x,y){
+  mode='fade';$('#fade').style.opacity=1;
+  setTimeout(()=>{loadMap(id);playMusic(id);P.x=x;P.y=y;P.from=null;P.mv=0;$('#place').textContent=MAP.n;toast(MAP.n);$('#fade').style.opacity=0;mode='play';save()},RM?0:230); 
+}
+function arrive(){const w=MAP.warps&&MAP.warps[tileAt(P.x,P.y)];if(w)go(w.to,w.x,w.y)}
+
+/* ---- reloj y autobús ---- */
+function tick(dt){
+  G.acc=(G.acc||0)+dt;if(G.acc>=800){G.acc-=800;G.min++}
+  if(G.map==='barrio'||G.map==='casa')return;
+  if(G.min>=975&&!G.flags['w'+G.day]){G.flags['w'+G.day]=1;toast('El autobús llega a las 16:25')}
+  if(G.min>=985&&!G.flags['b'+G.day]&&!P.mv)busStart();
+}
+function busStart(){G.flags['b'+G.day]=1;bus={t:0};mode='bus';$('#dlg').hidden=true;$('#menu').hidden=true}
+function busEnd(){G.min=1000;setQ('Ya estás en casa. Descansa o habla con tu madre.');go('barrio',10,5)}
+function sleep(){G.day++;G.min=480;G.flags={...G.flags};setQ('Nuevo día: ve a clase. El autobús sale a las 16:25.');go('pasillo',10,5)}
+function renderBus(){
+  cx.setTransform(1,0,0,1,0,0);cx.fillStyle='#f4c48a';cx.fillRect(0,0,W,H);
+  cx.setTransform(Z,0,0,Z,0,0);cx.imageSmoothingEnabled=false;
+  const vw=W/Z,vh=H/Z,gy=Math.round(vh*.5),T=bus.t;
+  const R=(c,a,b,w,h)=>{cx.fillStyle=c;cx.fillRect(Math.round(a),Math.round(b),w,h)};
+  R('#b5523a',0,gy-36,vw,36);for(let x=4;x<vw;x+=24)R('#f6f0dc',x,gy-26,10,10);R('#8a3b32',0,gy-38,vw,3);
+  R('#9aa0a8',0,gy,vw,10);R('#3b4048',0,gy+10,vw,36);for(let x=0;x<vw;x+=24)R('#f2d45c',x,gy+29,12,2);
+  const stop=vw*.5,u=Math.min(1,T/1800),bx=T<3600?-100+(stop+100)*(1-(1-u)*(1-u)):stop+Math.pow((T-3600)/1000,2)*150,by=gy+36;
+  R('#f2b21c',bx,by-26,84,26);R('#222',bx,by-12,84,2);R('#d99a10',bx,by-26,84,3);
+  for(let i=0;i<4;i++)R('#9fd3ee',bx+6+i*16,by-21,12,9);
+  R(T>1800&&T<3400?'#3a2a1a':'#c98d10',bx+72,by-22,8,22);
+  R('#222',bx+10,by-4,12,8);R('#222',bx+58,by-4,12,8);
+  cx.fillStyle='#222';cx.font='6px monospace';cx.fillText('SCHOOL BUS',bx+8,by-3);
+  const dx=stop+72;
+  if(T<3000){const kx=T<1800?stop+20:stop+20+(dx-stop-20)*Math.min(1,(T-1800)/1200);drawChar(kx,gy-8,'right','#38251c','#3d6b9a',T>1800&&((T/150|0)&1),1,false)}
+  else if(T>3600){R('#e8b98a',bx+22,by-21,5,5);R('#38251c',bx+22,by-21,5,2)}
+  cx.setTransform(1,0,0,1,0,0);cx.fillStyle='#17202b';cx.font=Math.max(10,W/70|0)+"px 'Press Start 2P',monospace";cx.textAlign='center';
+  cx.fillText('4:25 PM',W/2,H*.12);cx.fillText(T<1800?'¡Llega el autobús!':T<3000?'Subiendo...':'Camino a casa...',W/2,H*.2);cx.textAlign='left';
+}
+
+/* ---- diálogo ---- */
+function say(lines){if(!lines||!lines.length)return;mode='dlg';q=lines.slice();nx()}
+function nx(){
+  const l=q.shift();
+  if(!l){mode='play';$('#dlg').hidden=true;save();return}
+  cur=typeof l==='string'?{t:l}:l;
+  if(cur.fx)cur.fx();
+  $('#dlg').hidden=false;
+  const w=$('#who');w.textContent=cur.n||'';w.hidden=!cur.n;
+  $('#opts').innerHTML='';sel=0;full=cur.t;let i=0;$('#txt').textContent='';
+  clearInterval(ti);ti=setInterval(()=>{i+=RM?full.length:1;$('#txt').textContent=full.slice(0,i);if(i>=full.length)done()},24);
+}
+function done(){clearInterval(ti);ti=null;$('#txt').textContent=full;if(cur.opts)drawOpts()}
+function drawOpts(){$('#opts').innerHTML=cur.opts.map((o,i)=>`<button data-i="${i}" class="${i==sel?'on':''}">${o.t}</button>`).join('')}
+function adv(){if(ti){done();return}if(cur.opts){pick(sel);return}nx()}
+function pick(i){const o=cur.opts[i];if(o.fx)o.fx();q=(o.go||[]).concat(q);nx()}
+$('#opts').onclick=e=>{const b=e.target.closest('button');if(b)pick(+b.dataset.i)};
+$('#dlg').addEventListener('pointerdown',e=>{if(!e.target.closest('button'))adv()});
+
+function interact(){
+  const [x,y]=front(),n=targetAt(x,y);
+  if(n){if(!n.obj)n.dir={up:'down',down:'up',left:'right',right:'left'}[P.dir];say(n.talk());return}
+  const c=tileAt(x,y);
+  if(c==='B')say(['La pizarra está llena de apuntes a medio borrar.']);
+  else if(c==='X')say(['La puerta está cerrada. Por ahora.']);
+  else if(c==='L')say(['Una taquilla. No es la tuya.']);
+  else if(c==='H')say([G.map==='gimnasio'?'Las gradas. Están frías.':G.map==='ciencias'?'Una mesa de laboratorio con tubos de ensayo.':'Un banco de madera.']);
+  else if(c==='D')say(['Un pupitre con garabatos de otros años.']);
+  else if(c==='N')say(['Los vecinos no están en casa.']);
+  else if(c==='M')say(['El buzón: solo propaganda.']);
+  else if(c==='C')say(['El coche de la familia. Todavía huele a gasolina.']);
+  else if(c==='S')say(['Un sofá cómodo. Aquí se ve la tele.']);
+  else if(c==='O'){const ok=Math.random()<.5;say([{t:ok?'Lanzas... ¡Canasta!':'Lanzas... el balón rebota en el aro.',fx:()=>{if(ok)st('fama',0.3);addMin(5)}}])}
+  else if(c==='Z')say([{t:'¿Dormir y empezar un nuevo día?',opts:[{t:'Dormir',fx:sleep},{t:'Todavía no'}]}]);
+}
+
+/* ---- agenda ---- */
+function openMenu(){
+  mode='menu';
+  const bars=Object.keys(G.stats).map(k=>`<div>${STORY.statNames[k]}<span class="bar"><i style="width:${G.stats[k]*10}%"></i></span></div>`).join('');
+  const inv=G.inv.length?G.inv.map(i=>`<div>• <b>${STORY.items[i][0]}</b>: ${STORY.items[i][1]}</div>`).join(''):'<div>La mochila está vacía.</div>';
+  $('#menuBody').innerHTML=`<h2>Agenda</h2><h3>Hora</h3><div>${clockStr()}</div><h3>Objetivo</h3><div>${G.quest}</div><h3>Estado</h3>${bars}<h3>Mochila</h3>${inv}<div class="row"><button class="sq" id="mSave">Guardar</button>
+<button class="sq" id="mMusic">Música: ON/OFF</button>
+<button class="sq" id="mFs">Pantalla completa</button>
+<button class="sq" id="mClose">Cerrar</button>
+</div>`;
+  $('#menu').hidden=false;
+  $('#mSave').onclick=()=>{save();toast('Partida guardada')};
+  $('#mMusic').onclick=()=>{
+  if(music.paused){
+    music.play().catch(()=>{});
+    toast('Música activada');
+  }else{
+    music.pause();
+    toast('Música desactivada');
+  }
+};
+  $('#mFs').onclick=fs;$('#mClose').onclick=closeMenu;
+}
+function closeMenu(){$('#menu').hidden=true;mode='play'}
+function fs(){try{document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}}
+
+/* ---- entrada ---- */
+const KM={ArrowUp:'up',w:'up',W:'up',ArrowDown:'down',s:'down',S:'down',ArrowLeft:'left',a:'left',A:'left',ArrowRight:'right',d:'right',D:'right'};
+addEventListener('keydown',e=>{
+  const k=KM[e.key];
+  if(mode==='title')return;
+  if(e.key==='f'||e.key==='F'){fs();return}
+  if(mode==='dlg'){
+    if(cur&&cur.opts&&!ti&&(k==='up'||k==='down')){sel=(sel+(k==='up'?-1:1)+cur.opts.length)%cur.opts.length;drawOpts()}
+    if(!e.repeat&&(e.key==='e'||e.key==='E'||e.key===' '||e.key==='Enter'))adv();
+    e.preventDefault();return;
+  }
+  if(mode==='menu'){if(e.key==='Escape'||e.key==='Tab'||e.key==='m')closeMenu();return}
+  if(k){keys[k]=1;e.preventDefault()}
+  if(!e.repeat&&mode==='play'){
+    if(e.key==='e'||e.key==='E'||e.key===' '||e.key==='Enter'){interact();e.preventDefault()}
+    if(e.key==='Escape'||e.key==='Tab'||e.key==='m'||e.key==='M'){openMenu();e.preventDefault()}
+  }
+});
+addEventListener('keyup',e=>{const k=KM[e.key];if(k)delete keys[k]});
+addEventListener('blur',()=>{keys={}});
+document.querySelectorAll('#pad button').forEach(b=>{
+  b.addEventListener('pointerdown',e=>{keys[b.dataset.k]=1;e.preventDefault()});
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>delete keys[b.dataset.k]));
+});
+$('#act').addEventListener('pointerdown',e=>{e.preventDefault();if(mode==='dlg')adv();else if(mode==='play')interact()});
+$('#bMenu').onclick=()=>{if(mode==='play')openMenu()};$('#bFs').onclick=fs;
+
+/* ---- dibujo ---- */
+function fit(){
+  const d=devicePixelRatio||1;cv.width=innerWidth*d;cv.height=innerHeight*d;W=cv.width;H=cv.height;
+  Z=Math.max(1,Math.floor(Math.min(W/(18*16),H/(11*16))));
+}
+addEventListener('resize',fit);
+const hash=(x,y)=>((x*73856093)^(y*19349663))>>>0;
+const WC=['#e8d9b5','#cfe0ea','#e3c9c9'],RC=['#8a3b32','#3f5f8a','#5a6b3a'];
+
+function drawTile(ch,x,y,wx,wy){
+  const R=(c,a,b,w,h)=>{cx.fillStyle=c;cx.fillRect(wx+a,wy+b,w,h)};
+  const f=MAP.floor,hh=hash(x,y),hi=Math.abs(Math.round((x-3)/7))%3,wd=MAP.rows[0].length;
+  if(f==='lino'){R((x+y)&1?'#cfc8ae':'#c3bca0',0,0,16,16);if(hh%5==0)R('#b5ae94',3,5,2,1)}
+  else if(f==='wood'){R(x&1?'#b99467':'#b08c60',0,0,16,16);R('#9a7650',0,15,16,1)}
+  else if(f==='court'){
+    R(x&1?'#d6a55c':'#cf9d54',0,0,16,16);R('#b8873f',0,15,16,1);
+    const k=(x>=1&&x<=3)||(x>=12&&x<=14);
+    if(x==wd/2)R('#f6f0dc',0,0,1,16);
+    if(k&&y>=3&&y<=6){if(y==3)R('#f6f0dc',0,0,16,1);if(y==6)R('#f6f0dc',0,15,16,1);if(x==3)R('#f6f0dc',15,0,1,16);if(x==12)R('#f6f0dc',0,0,1,16)}
+  }
+  else{R('#5e9b4d',0,0,16,16);if(hh%3==0)R('#4f8a40',hh%12,(hh>>3)%12,2,2);if(hh%7==0)R('#e8d86a',(hh>>2)%13,(hh>>5)%13,1,1)}
+  switch(ch){
+    case '#':R('#2f3b4a',0,0,16,16);R('#3d4c5f',0,0,16,3);R('#242e3b',0,13,16,3);break;
+    case 'L':R('#16524e',0,0,16,16);R('#2e8f87',0,0,16,15);R('#1e6f6a',7,0,2,15);R('#16524e',2,3,4,1);R('#16524e',10,3,4,1);R('#e8e2c0',5,8,1,3);R('#e8e2c0',10,8,1,3);R('#3fb0a6',0,0,16,1);break;
+    case 'D':R('#6b4a2b',2,11,2,4);R('#6b4a2b',12,11,2,4);R('#a8763f',1,3,14,9);R('#c9964f',1,3,14,2);R('#e0e0e0',4,6,5,3);break;
+    case 'B':R('#5b4630',0,0,16,16);R('#1f4a3a',1,1,14,11);R('#e9e7d8',3,4,6,1);R('#e9e7d8',3,7,9,1);R('#e9e7d8',11,4,2,1);R('#c9b08a',1,13,14,2);break;
+    case 'T':R('#6b4a2b',6,9,4,6);R('#2f7a3a',1,1,14,11);R('#3f9a4a',3,2,6,4);R('#27632f',2,9,12,3);break;
+    case 'H':R('#5b3d22',2,10,2,5);R('#5b3d22',12,10,2,5);R('#a67a47',0,5,16,4);R('#7a5230',0,9,16,2);break;
+    case 'a':case 'b':case 'c':case 'g':case 'p':case 'q':case 'd':case 'X':R('#2f3b4a',0,0,16,16);R('#5a301a',2,0,12,16);R(ch==='X'?'#7a5a44':'#b86a3c',3,1,10,14);R('#8a4b2a',3,7,10,1);R(ch==='X'?'#c4423f':'#f2d45c',11,8,2,2);break;
+    case 'O':R('#5b3d22',6,0,4,3);R('#e9e7d8',3,2,10,7);R('#c4423f',6,4,4,3);R('#e2e2e2',5,9,6,1);R('#d9d2b8',5,10,6,3);break;
+    case 'R':R(RC[hi],0,0,16,16);R('rgba(255,255,255,.15)',0,0,16,2);R('rgba(0,0,0,.2)',0,7,16,1);R('rgba(0,0,0,.2)',0,13,16,1);break;
+    case 'W':R(WC[hi],0,0,16,16);R('#fff',3,3,10,8);R('#7fb5d6',4,4,8,6);R('#fff',7,4,2,6);R('#a89c80',0,15,16,1);break;
+    case 'e':case 'N':R(WC[hi],0,0,16,16);R('#5a301a',3,1,10,15);R(ch==='e'?'#b86a3c':'#4f7fa8',4,2,8,14);R('#f2d45c',10,9,2,2);break;
+    case 'r':R('#3b4048',0,0,16,16);if(y==6&&!(x&1))R('#f2d45c',2,14,12,2);break;
+    case 's':R('#bdbdb5',0,0,16,16);R('#a4a49c',0,15,16,1);R('#a4a49c',15,0,1,16);break;
+    case 'C':R('rgba(0,0,0,.25)',1,12,14,3);R('#c4423f',1,6,14,7);R('#d9605c',3,3,10,4);R('#9fd3ee',4,4,3,3);R('#9fd3ee',9,4,3,3);R('#222',3,12,3,3);R('#222',10,12,3,3);break;
+    case 'M':R('#6b4a2b',7,8,2,7);R('#3d6b9a',3,3,10,6);R('#c4423f',12,2,2,3);break;
+    case 'Z':R('#6b4a2b',0,2,16,14);R('#e8e2c0',1,3,14,12);R('#3d6b9a',1,8,14,7);R('#fff',2,4,5,3);break;
+    case 'S':R('#7a2f2c',0,4,16,11);R('#9a403c',1,7,14,7);R('#7a2f2c',0,4,16,3);break;
+  }
+}
+
+function drawChar(wx,wy,dir,hair,shirt,ph,bag,sit){
+  const R=(c,a,b,w,h)=>{cx.fillStyle=c;cx.fillRect(Math.round(wx)+a,Math.round(wy)+b,w,h)};
+  R('rgba(0,0,0,.25)',3,14,10,2);
+  const o=ph?1:0;
+  if(sit){
+    R('#2b3550',4,11,4,3);R('#2b3550',8,11,4,3);R(shirt,4,5,8,6);R('#e8b98a',2,6,2,4);R('#e8b98a',12,6,2,4);R('#e8b98a',4,0,8,6);R(hair,4,0,8,3);
+    if(dir==='up')R(hair,4,0,8,6);
+    else if(dir==='down'){R('#1d2a5b',5,3,2,2);R('#1d2a5b',9,3,2,2)}
+    else{R(hair,dir==='left'?9:4,0,3,5);R('#1d2a5b',dir==='left'?5:10,3,1,2)}
+    return;
+  }
+  R('#2b3550',5,11,3,4-o);R('#2b3550',8,11,3,3+o);
+  if(bag&&dir==='up')R('#c4423f',4,5,8,7);
+  R(shirt,4,6,8,6);R('#e8b98a',2,7,2,4);R('#e8b98a',12,7,2,4);R('#e8b98a',4,0,8,7);R(hair,4,0,8,3);
+  if(dir==='up')R(hair,4,0,8,6);
+  else if(dir==='down'){R('#1d2a5b',5,4,2,2);R('#1d2a5b',9,4,2,2)}
+  else{R(hair,dir==='left'?9:4,0,3,5);R('#1d2a5b',dir==='left'?5:10,4,1,2)}
+  if(bag&&dir!=='up'&&dir!=='down')R('#c4423f',dir==='left'?11:3,6,3,6);
+  if(bag&&dir==='down')R('#c4423f',3,7,1,4);
+}
+
+function frame(t){
+  const dt=Math.min(50,t-t0);t0=t;clock+=dt;
+  if(mode==='play'||mode==='dlg'||mode==='menu'||mode==='fade'||mode==='bus'){update(dt);render()}
+  requestAnimationFrame(frame);
+}
+const STEP=150;
+function npcPos(n){return n.from?[(n.from[0]+(n.x-n.from[0])*n.mv)*16,(n.from[1]+(n.y-n.from[1])*n.mv)*16]:[n.x*16,n.y*16]}
+function updNpcs(dt,allowNew){
+  for(const n of npcsHere()){
+    if(n.obj||n.still)continue;
+    if(n.hx===undefined){n.hx=n.x;n.hy=n.y;n.t=500+Math.random()*2000;n.step=0}
+    if(n.from){n.mv+=dt/(STEP*1.7);if(n.mv>=1){n.from=null;n.mv=0;n.step++}continue}
+    if(!allowNew)continue;
+    n.t-=dt;if(n.t>0)continue;
+    n.t=800+Math.random()*2800;
+    const k=Object.keys(DIR)[Math.random()*4|0],d=DIR[k],nx=n.x+d[0],ny=n.y+d[1],r=n.r||3;
+    n.dir=k;
+    if(Math.abs(nx-n.hx)>r||Math.abs(ny-n.hy)>r)continue;
+    if(!free(nx,ny)||(MAP.warps&&MAP.warps[tileAt(nx,ny)]))continue;
+    if((P.x===nx&&P.y===ny)||(P.from&&P.from[0]===nx&&P.from[1]===ny))continue;
+    n.from=[n.x,n.y];n.x=nx;n.y=ny;n.mv=.001;
+  }
+}
+function update(dt){
+  if(mode==='bus'){bus.t+=dt;if(bus.t>5800)busEnd();return}
+  updNpcs(dt,mode==='play');
+  if(mode!=='play')return;
+  tick(dt);if(mode!=='play')return;
+  if(P.mv){P.mv+=dt/STEP;if(P.mv>=1){P.mv=0;P.from=null;P.step++;arrive()}}
+  if(!P.mv&&mode==='play'){
+    const k=keys.up?'up':keys.down?'down':keys.left?'left':keys.right?'right':null;
+    if(k){P.dir=k;const d=DIR[k],nx=P.x+d[0],ny=P.y+d[1];
+      if(free(nx,ny)){P.from=[P.x,P.y];P.x=nx;P.y=ny;P.mv=.001}}
+  }
+}
+function render(){
+  if(mode==='bus'){renderBus();$('#hora').textContent=clockStr();return}
+  cx.setTransform(1,0,0,1,0,0);cx.fillStyle='#0f151d';cx.fillRect(0,0,W,H);
+  cx.setTransform(Z,0,0,Z,0,0);cx.imageSmoothingEnabled=false;
+  const vw=W/Z,vh=H/Z,mw=MAP.rows[0].length*16,mh=MAP.rows.length*16;
+  let px=P.x*16,py=P.y*16;
+  if(P.from){px=(P.from[0]+(P.x-P.from[0])*P.mv)*16;py=(P.from[1]+(P.y-P.from[1])*P.mv)*16}
+  let cX=mw<=vw?(mw-vw)/2:Math.max(0,Math.min(mw-vw,px+8-vw/2));
+  let cY=mh<=vh?(mh-vh)/2:Math.max(0,Math.min(mh-vh,py+8-vh/2));
+  cX=Math.round(cX);cY=Math.round(cY);
+  cx.translate(-cX,-cY);
+  for(let y=0;y<MAP.rows.length;y++)for(let x=0;x<MAP.rows[y].length;x++){
+    const wx=x*16,wy=y*16;if(wx+16<cX||wx>cX+vw||wy+16<cY||wy>cY+vh)continue;drawTile(MAP.rows[y][x],x,y,wx,wy)}
+  const ents=npcsHere().filter(n=>!n.obj).map(n=>{const p=npcPos(n);
+    return {y:p[1],f:()=>drawChar(p[0],p[1]-(n.from?Math.abs(Math.sin(n.mv*Math.PI))*1.5:0),n.dir||'down',n.hair,n.shirt,n.from&&(n.step&1),0,!!n.sit)}});
+  ents.push({y:py,f:()=>drawChar(px,py-(P.from?Math.abs(Math.sin(P.mv*Math.PI))*1.5:0),P.dir||'down','#38251c','#3d6b9a',P.from&&(P.step&1),1,false)});
+  ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());
+  if(mode==='play'&&!P.mv){const [fx,fy]=front(),n=targetAt(fx,fy);
+    if(n){const bx=fx*16+2,by=fy*16-(n.obj?4:7)+Math.sin(clock/200)*1;cx.fillStyle='#f6f0dc';cx.fillRect(bx,by,12,7);cx.fillStyle='#1d2a5b';cx.fillRect(bx+3,by+3,1,1);cx.fillRect(bx+5,by+3,1,1);cx.fillRect(bx+7,by+3,1,1)}}
+  cx.setTransform(1,0,0,1,0,0);
+  const g=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.75);
+  g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(8,10,16,.5)');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  $('#hora').textContent=clockStr();$('#obj').textContent='▸ '+G.quest;
+}
+
+/* ---- inicio ---- */
+function begin(isNew){
+  if(isNew||!load())newGame();
+  $('#title').hidden=true;$('#hud').hidden=false;$('#place').textContent=MAP.n;
+  fit();mode='play';fs();
+  if(isNew)say(STORY.intro);
+  playMusic(G.map);
+}
+$('#tTitle').textContent=STORY.title;$('#tSub').textContent=STORY.sub;document.title=STORY.title;
+$('#bCont').hidden=!hasSave();
+$('#bStart').onclick=()=>begin(true);
+$('#bCont').onclick=()=>begin(false);
+fit();newGame();requestAnimationFrame(t=>{t0=t;frame(t)});
+</script>
+<script src="js/mp3.js"></script>
+</body>
+</html>
