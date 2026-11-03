@@ -2,7 +2,7 @@
    REPRODUCTOR MP3 — se carga DESPUÉS del script principal:
    <script src="js/mp3.js"></script>   (justo antes de </body>)
    Para añadir canciones: copia el .mp3 a la carpeta audio/ y agrega una línea a PLAYLIST.
-   Dentro del juego también hay un botón «+» para cargar canciones de tu dispositivo (solo esa sesión).
+   Dentro del juego, «+ AÑADIR» carga canciones de tu dispositivo y quedan GUARDADAS en el navegador (IndexedDB).
    ===================================================================== */
 (function(){
 const PLAYLIST=[
@@ -15,8 +15,30 @@ const PLAYLIST=[
   {t:'Casa',f:'audio/barrio1.mp3'}
   // ,{t:'Mi canción nueva',f:'audio/mi-cancion.mp3'}
 ];
+/* ---- canciones automáticas de la carpeta audio/ ----
+   1) js/playlist.js (lo genera make-playlist.py) → funciona también abriendo el HTML directo
+   2) si usas un servidor local (python -m http.server, Live Server...), se lee la carpeta sola */
+const nice=f=>f.replace(/^.*\//,'').replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ');
+const addSong=f=>{if(!PLAYLIST.some(s=>s.f===f))PLAYLIST.push({t:nice(f),f})};
+(window.AUDIO_FILES||[]).forEach(addSong);
+fetch('audio/').then(r=>r.ok?r.text():'').then(h=>{
+  [...h.matchAll(/href="([^"?#]+\.(?:mp3|ogg|wav|m4a))"/gi)].forEach(m=>addSong('audio/'+decodeURIComponent(m[1]).replace(/^.*\//,'')));
+  if(document.getElementById('mp3')&&!document.getElementById('mp3').hidden)ui();
+}).catch(()=>{});
 const MP3={on:false,i:0,shuffle:false,hist:[],list:false};
 const el=id=>document.getElementById(id);
+/* ---- canciones añadidas por el jugador: se guardan en IndexedDB y vuelven al abrir el juego ---- */
+const SAVED=new Set();
+const IDB={
+  open(){if(!IDB.p)IDB.p=new Promise((res,rej)=>{if(!window.indexedDB)return rej();const r=indexedDB.open('horizonte-mp3',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('songs',{keyPath:'id',autoIncrement:true});
+    r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return IDB.p},
+  all(){return IDB.open().then(db=>new Promise((res,rej)=>{const q=db.transaction('songs').objectStore('songs').getAll();q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}))},
+  add(rec){return IDB.open().then(db=>new Promise((res,rej)=>{const q=db.transaction('songs','readwrite').objectStore('songs').add(rec);q.onsuccess=()=>res(q.result);q.onerror=()=>rej(q.error)}))}
+};
+IDB.all().then(rows=>{rows.forEach(r=>{SAVED.add(r.key);PLAYLIST.push({t:r.name,f:URL.createObjectURL(r.blob)})});
+  if(el('mp3')&&!el('mp3').hidden)ui()}).catch(()=>{});
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 
 /* ---- el objeto: lo da el alumno del gimnasio ---- */
 STORY.items.mp3=['Reproductor MP3','Un reproductor con auriculares. Ábrelo desde la Agenda.'];
@@ -108,8 +130,16 @@ el('mpLs').onclick=e=>{const b=e.target.closest('button');if(b)play(+b.dataset.i
 el('mpV1').onclick=()=>vol(-.1);el('mpV2').onclick=()=>vol(.1);el('mpE').onclick=ambient;
 el('mpBar').onclick=e=>{if(!MP3.on||!isFinite(music.duration))return;const r=e.currentTarget.getBoundingClientRect();music.currentTime=(e.clientX-r.left)/r.width*music.duration};
 el('mpA').onclick=()=>el('mpF').click();
-el('mpF').onchange=e=>{[...e.target.files].forEach(f=>PLAYLIST.push({t:f.name.replace(/\.[^.]+$/,''),f:URL.createObjectURL(f)}));
-  if(e.target.files.length)toast('Canciones añadidas: '+e.target.files.length);e.target.value='';ui()};
+el('mpF').onchange=e=>{
+  const files=[...e.target.files];let n=0;
+  files.forEach(f=>{
+    const key=f.name+'|'+f.size;if(SAVED.has(key))return;SAVED.add(key);n++;
+    const name=f.name.replace(/\.[^.]+$/,'');
+    PLAYLIST.push({t:name,f:URL.createObjectURL(f)});
+    IDB.add({key,name,blob:f}).catch(()=>toast('No se pudo guardar '+f.name));
+  });
+  if(files.length)toast(n?'Canciones guardadas: '+n:'Esas canciones ya estaban');
+  e.target.value='';ui()};
 /* Esc / Tab / M cierran primero el reproductor, no la Agenda */
 addEventListener('keydown',e=>{if(!box.hidden&&['Escape','Tab','m','M'].includes(e.key)){closeP();e.stopImmediatePropagation();e.preventDefault()}},true);
 })();
