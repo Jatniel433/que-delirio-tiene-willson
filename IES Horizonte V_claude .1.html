@@ -125,13 +125,13 @@ const STORY={
     '...',
     'piensa en lo que te ahoras de tiempo al estar aca, al menos no estaras con el estupido de el hijo del vecino que se cree tu amigo, ni soportar como te mira. ',
     'Tu objetivo es encontrar a Paco, el conserje. Él te dará la llave de tu taquilla.',
-    'Ah, y el autobús sale a las 16:25. No lo pierdas.'
+    'Ah, y el autobús sale a las 16:25 desde la parada, fuera del instituto (por la verja del patio). No lo pierdas.'
   ],
   npcs:[
     {id:'alumno2',map:'pasillo',x:6,y:5,name:'Alumno 2',hair:'#38251c',shirt:'#c4423f',talk:()=>[{n:'Alumno 2',t:'¿Sabes qué clase toca ahora?'},{n:'Alumno 2',t:'Mates en la puerta del fondo, Ciencias al otro lado, y Lengua es el 1A.'}]},
     {id:'paco',map:'pasillo',x:8,y:3,name:'Paco',hair:'#8a8a8a',shirt:'#3d6b9a',sit:true,still:true,talk:()=>{
       if(G.inv.includes('llave'))return [{n:'Paco',t:'Ya tienes tu llave. Y no corras por los pasillos.'}];
-      const dar=[{n:'Paco',t:'Toma. Cuídala, que es la tercera que pierdo este año.',fx:()=>{give('llave');setQ('Abre tu taquilla (la 7) y ve a clase: Lengua, Mates, Ciencias y Educación Física.')}}];
+      const dar=[{n:'Paco',t:'Toma. Cuídala, que es la tercera que pierdo este año.',fx:()=>{give('llave');setQ('Abre tu taquilla (la 7) y ve a clase: Lengua, Mates, Ciencias y Educación Física. Antes de las 16:25 espera en la parada, fuera del instituto.')}}];
       if(G.pacoHablo)return [{n:'Paco',t:'Será mejor que tomes la llave antes de que se te olvide... o a mí.',opts:[{t:'Coger la llave',go:dar},{t:'Seguir explorando',go:[{n:'Paco',t:'Como quieras, pero luego no digas que no te avisé.'}]}]}];
       return [{n:'Paco',t:'¡Eh, tú! El nuevo, ¿verdad? Tu taquilla es la 7. La llave la tengo yo.',opts:[{t:'Gracias, Paco. ¿Me la das?',go:dar},{t:'Prefiero explorar primero.',go:[{n:'Paco',t:'Como quieras. Aquí estaré.',fx:()=>{G.pacoHablo=true}}]}]}];
     }},
@@ -163,6 +163,8 @@ const STORY={
     {id:'alumno5',map:'gimnasio',x:4,y:5,name:'Alumno',hair:'#d9a441',shirt:'#3d6b9a',talk:()=>[{n:'Alumno',t:'¡Pásala! ¡Pásala! ¡Nunca me la pasan!'}]},
     {id:'alumna6',map:'gimnasio',x:11,y:6,name:'Alumna',hair:'#5b3a8c',shirt:'#2e8f87',talk:()=>[{n:'Alumna',t:'Si encestas desde el centro, te respeto para siempre.'}]},
     {id:'dani',map:'patio',x:5,y:6,name:'Dani',hair:'#d9a441',shirt:'#2e8f87',talk:()=>[{n:'Dani',t:'Dicen que en el gimnasio se oyen ruidos por la noche.'},{n:'Dani',t:'Yo no me lo creo. Pero tampoco entro solo.'},{n:'Dani',t:'El gimnasio está al fondo del patio, a la derecha.'}]},
+    /* Limpieza: solo aparece cuando te quedas solo en el instituto */
+    {id:'limpieza',map:'pasillo',x:14,y:3,r:6,name:'Limpieza',hair:'#8a8a8a',shirt:'#2e8f87',talk:()=>[{n:'Limpieza',t:'Es tarde. Ya no queda nadie más en el instituto.'}]},
     /* Barrio y casa */
     {id:'tomas',map:'barrio',x:13,y:5,name:'Tomás',hair:'#8a5a2b',shirt:'#e8d86a',talk:()=>[{n:'Tomás',t:'¡Hey! ¡Somos amigos, ¿verdad?! ¡Vamos a jugar!',opts:[
       {t:'Claro... un ratito.',go:[{n:'Tomás',t:'¡Genial! Eres mi mejor amigo.',fx:()=>{st('animo',-0.5);addMin(20)}}]},
@@ -208,8 +210,11 @@ const MAPS={
     '#.HHHH....HHHH.#',
     '#######d########'],warps:{d:{to:'patio',x:18,y:5}}},
   patio:(()=>{const g=gen(20,11,(x,y)=>(x==0||x==19||y==10)?'T':(y==0?'#':'.'));
-    g.put(9,0,'q');g.put(19,5,'g');[[3,3],[15,3],[16,8],[2,8],[10,8]].forEach(p=>g.put(p[0],p[1],'T'));[[6,5],[7,5],[13,6],[14,6]].forEach(p=>g.put(p[0],p[1],'H'));
-    return {n:'Patio',floor:'grass',rows:g.r,warps:{q:{to:'pasillo',x:10,y:5},g:{to:'gimnasio',x:7,y:8}}}})(),
+    g.put(9,0,'q');g.put(19,5,'g');g.put(10,10,'k');[[3,3],[15,3],[16,8],[2,8],[10,8]].forEach(p=>g.put(p[0],p[1],'T'));[[6,5],[7,5],[13,6],[14,6]].forEach(p=>g.put(p[0],p[1],'H'));
+    return {n:'Patio',floor:'grass',rows:g.r,warps:{q:{to:'pasillo',x:10,y:5},g:{to:'gimnasio',x:7,y:8},k:{to:'salida',x:11,y:1}}}})(),
+  salida:(()=>{const g=gen(24,8,(x,y)=>y==0?'F':y==7?'T':(y>=3&&y<=5)?'Q':(x==0||x==23)?'T':(y==2||y==6)?'s':'.');
+    g.put(11,0,'u');g.put(17,1,'J');g.put(18,1,'P');g.put(19,1,'P');[[3,1],[7,1],[14,1],[21,1]].forEach(p=>g.put(p[0],p[1],'T'));
+    return {n:'Salida del instituto',floor:'grass',rows:g.r,warps:{u:{to:'patio',x:10,y:9}}}})(),
   barrio:(()=>{const g=gen(24,10,(x,y)=>(x==0||x==23||y==0||y==9)?'T':y==5||y==8?'s':y==6||y==7?'r':'.');
     [3,10,17].forEach(hx=>{[-1,0,1].forEach(d=>g.put(hx+d,1,'R'));g.put(hx-1,2,'W');g.put(hx,2,hx==10?'e':'N');g.put(hx+1,2,'W')});
     g.put(13,3,'C');g.put(8,4,'M');[[6,3],[20,3],[2,4],[21,4],[13,1]].forEach(p=>g.put(p[0],p[1],'T'));
@@ -223,7 +228,15 @@ const MAPS={
 const $=s=>document.querySelector(s);
 const cv=$('#cv'),cx=cv.getContext('2d');
 const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
-const SOLID='#LDBTHXZSORWNMC';
+const SOLID='#LDBTHXZSORWNMCFQPJ';
+const SCHOOL=['pasillo','aula','mates','ciencias','gimnasio','patio','salida'];
+const STOP={y:2,x0:16,x1:21}; /* zona de la parada (acera junto al refugio) */
+const late=()=>!!(G&&G.flags&&G.flags['m'+G.day]); /* perdiste el bus hoy */
+function npcVisible(n){
+  if(n.obj)return true;
+  if(late()&&SCHOOL.includes(n.map))return n.id==='limpieza';
+  return n.id!=='limpieza';
+}
 const DIR={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
 const DAYS=['Lunes','Martes','Miércoles','Jueves','Viernes'];
 let G,MAP,mode='title',keys={},P={},t0=0,Z=3,W=0,H=0,clock=0,bus={t:0};
@@ -242,7 +255,8 @@ const MUSIC = {
   patio: 'audio/patio.mp3',
   gimnasio: 'audio/aula.mp3',
   barrio: 'audio/barrio.mp3',
-  casa: 'audio/barrio1.mp3'
+  casa: 'audio/barrio1.mp3',
+  salida: 'audio/patio.mp3'
 };
 
 function playMusic(place) {
@@ -291,8 +305,8 @@ function hasSave(){try{return !!localStorage.getItem(STORY.save)}catch(e){return
 
 /* ---- mapa ---- */
 const tileAt=(x,y)=>(MAP.rows[y]||'')[x]||'#';
-const npcsHere=()=>STORY.npcs.filter(n=>n.map===G.map);
-function free(x,y){if(SOLID.includes(tileAt(x,y)))return false;return !npcsHere().some(n=>!n.obj&&((n.x===x&&n.y===y)||(n.from&&n.from[0]===x&&n.from[1]===y)))}
+const npcsHere=()=>STORY.npcs.filter(n=>n.map===G.map&&npcVisible(n));
+function free(x,y){if(SOLID.includes(tileAt(x,y)))return false;if(tileAt(x,y)==='k'&&late())return false;return !npcsHere().some(n=>!n.obj&&((n.x===x&&n.y===y)||(n.from&&n.from[0]===x&&n.from[1]===y)))}
 function front(){const d=DIR[P.dir];return [P.x+d[0],P.y+d[1]]}
 function targetAt(x,y){return npcsHere().find(n=>n.x===x&&n.y===y)}
 
@@ -306,12 +320,19 @@ function arrive(){const w=MAP.warps&&MAP.warps[tileAt(P.x,P.y)];if(w)go(w.to,w.x
 function tick(dt){
   G.acc=(G.acc||0)+dt;if(G.acc>=800){G.acc-=800;G.min++}
   if(G.map==='barrio'||G.map==='casa')return;
-  if(G.min>=975&&!G.flags['w'+G.day]){G.flags['w'+G.day]=1;toast('El autobús llega a las 16:25')}
-  if(G.min>=985&&!G.flags['b'+G.day]&&!P.mv)busStart();
+  if(G.min>=975&&!G.flags['w'+G.day]){G.flags['w'+G.day]=1;toast('El autobús pasa a las 16:25. ¡Corre a la parada!')}
+  if(G.min>=985&&!G.flags['b'+G.day]&&!G.flags['m'+G.day]&&!P.mv){if(inStopZone())busStart();else missBus()}
+}
+const inStopZone=()=>G.map==='salida'&&P.y===STOP.y&&P.x>=STOP.x0&&P.x<=STOP.x1;
+function missBus(){
+  G.flags['m'+G.day]=1;
+  setQ('Perdiste el autobús. Te has quedado en el instituto.');
+  toast('¡Perdiste el autobús!');
+  if(G.map==='salida')go('patio',10,9);else save();
 }
 function busStart(){G.flags['b'+G.day]=1;bus={t:0};mode='bus';$('#dlg').hidden=true;$('#menu').hidden=true}
 function busEnd(){G.min=1000;setQ('Ya estás en casa. Descansa o habla con tu madre.');go('barrio',10,5)}
-function sleep(){G.day++;G.min=480;G.flags={...G.flags};setQ('Nuevo día: ve a clase. El autobús sale a las 16:25.');go('pasillo',10,5)}
+function sleep(){G.day++;G.min=480;G.flags={...G.flags};setQ('Nuevo día: ve a clase. El autobús sale a las 16:25 desde la parada, fuera del instituto.');go('pasillo',10,5)}
 function renderBus(){
   cx.setTransform(1,0,0,1,0,0);cx.fillStyle='#f4c48a';cx.fillRect(0,0,W,H);
   cx.setTransform(Z,0,0,Z,0,0);cx.imageSmoothingEnabled=false;
@@ -365,6 +386,10 @@ function interact(){
   else if(c==='C')say(['El coche de la familia. Todavía huele a gasolina.']);
   else if(c==='S')say(['Un sofá cómodo. Aquí se ve la tele.']);
   else if(c==='O'){const ok=Math.random()<.5;say([{t:ok?'Lanzas... ¡Canasta!':'Lanzas... el balón rebota en el aro.',fx:()=>{if(ok)st('fama',0.3);addMin(5)}}])}
+  else if(c==='k')say([late()?'La verja está cerrada. Ya no pasa ningún autobús.':'La salida del instituto. El autobús pasa a las 16:25.']);
+  else if(c==='P'||c==='J')say(['Parada de autobús. El autobús sale a las 16:25.']);
+  else if(c==='F')say(['La valla del instituto.']);
+  else if(c==='Q')say(['Mejor no cruzar la calle con tanto tráfico.']);
   else if(c==='Z')say([{t:'¿Dormir y empezar un nuevo día?',opts:[{t:'Dormir',fx:sleep},{t:'Todavía no'}]}]);
 }
 
@@ -460,6 +485,12 @@ function drawTile(ch,x,y,wx,wy){
     case 'M':R('#6b4a2b',7,8,2,7);R('#3d6b9a',3,3,10,6);R('#c4423f',12,2,2,3);break;
     case 'Z':R('#6b4a2b',0,2,16,14);R('#e8e2c0',1,3,14,12);R('#3d6b9a',1,8,14,7);R('#fff',2,4,5,3);break;
     case 'S':R('#7a2f2c',0,4,16,11);R('#9a403c',1,7,14,7);R('#7a2f2c',0,4,16,3);break;
+    case 'F':R('#a8553f',0,0,16,16);R('#8a3b32',0,5,16,1);R('#8a3b32',0,10,16,1);R('#8a3b32',(y&1)?4:10,0,1,5);R('#8a3b32',(y&1)?10:4,5,1,5);R('#8a3b32',(y&1)?4:10,10,1,6);R('#6b2b29',0,0,16,2);break;
+    case 'u':R('#a8553f',0,0,16,16);R('#6b2b29',0,0,16,2);R('#c4b99a',3,2,10,14);R('#6b7480',2,2,2,14);R('#6b7480',12,2,2,14);break;
+    case 'k':R('#6b7480',1,2,2,13);R('#6b7480',13,2,2,13);R('#a8553f',0,0,16,2);R('#c4b99a',3,2,10,14);if(late()){R('#2f3b4a',3,2,10,13);for(let i=0;i<5;i++)R('#9aa0a8',4+i*2,3,1,12);R('#9aa0a8',3,8,10,1)}break;
+    case 'Q':R('#3b4048',0,0,16,16);if(y==3&&!(x&1))R('#f2d45c',2,14,12,2);break;
+    case 'P':R('rgba(0,0,0,.2)',0,13,16,2);R('#3d6b9a',0,1,16,4);R('#2a4a6a',0,5,16,1);R('#6b7480',1,5,1,10);R('#6b7480',14,5,1,10);R('#cfe0ea',2,6,12,4);R('#a67a47',2,10,12,2);break;
+    case 'J':R('#7a8696',7,4,2,11);R('#2e8f87',3,0,10,6);R('#f6f0dc',5,2,6,2);break;
   }
 }
 
@@ -490,6 +521,20 @@ function frame(t){
   requestAnimationFrame(frame);
 }
 const STEP=150;
+/* ---- coches de la calle de salida ---- */
+const CCOL=['#c4423f','#3d6b9a','#e8d86a','#2e8f87','#f6f0dc','#5b3a8c'];
+const LANES=[[3,-1,.05],[4,1,.04],[5,1,.065]];
+const CARS=[];
+LANES.forEach((l,i)=>[0,1].forEach(j=>CARS.push({lane:l[0],dir:l[1],v:l[2],x:20+j*232+i*60,c:CCOL[(i*2+j)%CCOL.length]})));
+function updCars(dt){const span=MAP.rows[0].length*16+80;for(const c of CARS){c.x+=c.dir*c.v*dt;if(c.x>span-40)c.x-=span;if(c.x<-40)c.x+=span}}
+function drawCar(wx,wy,dir,col){
+  const R=(c,a,b,w,h)=>{cx.fillStyle=c;cx.fillRect(Math.round(wx)+a,Math.round(wy)+b,w,h)};
+  const m=dir>0?a=>a:a=>21-a;
+  R('rgba(0,0,0,.25)',1,12,20,3);R(col,0,6,22,6);R('rgba(0,0,0,.18)',0,10,22,2);R(col,4,2,13,5);
+  R('#9fd3ee',dir>0?5:12,3,4,3);R('#9fd3ee',dir>0?11:6,3,4,3);
+  R('#f2d45c',dir>0?21:0,7,1,2);R('#c4423f',dir>0?0:21,7,1,2);
+  R('#222',3,10,5,4);R('#222',14,10,5,4);
+}
 function npcPos(n){return n.from?[(n.from[0]+(n.x-n.from[0])*n.mv)*16,(n.from[1]+(n.y-n.from[1])*n.mv)*16]:[n.x*16,n.y*16]}
 function updNpcs(dt,allowNew){
   for(const n of npcsHere()){
@@ -510,6 +555,7 @@ function updNpcs(dt,allowNew){
 function update(dt){
   if(mode==='bus'){bus.t+=dt;if(bus.t>5800)busEnd();return}
   updNpcs(dt,mode==='play');
+  if(G.map==='salida')updCars(dt);
   if(mode!=='play')return;
   tick(dt);if(mode!=='play')return;
   if(P.mv){P.mv+=dt/STEP;if(P.mv>=1){P.mv=0;P.from=null;P.step++;arrive()}}
@@ -532,6 +578,7 @@ function render(){
   cx.translate(-cX,-cY);
   for(let y=0;y<MAP.rows.length;y++)for(let x=0;x<MAP.rows[y].length;x++){
     const wx=x*16,wy=y*16;if(wx+16<cX||wx>cX+vw||wy+16<cY||wy>cY+vh)continue;drawTile(MAP.rows[y][x],x,y,wx,wy)}
+  if(G.map==='salida')CARS.forEach(c=>drawCar(c.x,c.lane*16+1,c.dir,c.c));
   const ents=npcsHere().filter(n=>!n.obj).map(n=>{const p=npcPos(n);
     return {y:p[1],f:()=>drawChar(p[0],p[1]-(n.from?Math.abs(Math.sin(n.mv*Math.PI))*1.5:0),n.dir||'down',n.hair,n.shirt,n.from&&(n.step&1),0,!!n.sit)}});
   ents.push({y:py,f:()=>drawChar(px,py-(P.from?Math.abs(Math.sin(P.mv*Math.PI))*1.5:0),P.dir||'down','#38251c','#3d6b9a',P.from&&(P.step&1),1,false)});
@@ -541,6 +588,7 @@ function render(){
   cx.setTransform(1,0,0,1,0,0);
   const g=cx.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.75);
   g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(8,10,16,.5)');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  if(late()&&SCHOOL.includes(G.map)){const a=Math.min(.72,Math.max(0,(G.min-985)/300*.72));cx.fillStyle='rgba(6,10,40,'+a+')';cx.fillRect(0,0,W,H)}
   $('#hora').textContent=clockStr();$('#obj').textContent='▸ '+G.quest;
 }
 
@@ -558,6 +606,7 @@ $('#bStart').onclick=()=>begin(true);
 $('#bCont').onclick=()=>begin(false);
 fit();newGame();requestAnimationFrame(t=>{t0=t;frame(t)});
 </script>
+<script src="js/playlist.js"></script>
 <script src="js/mp3.js"></script>
 </body>
 </html>
